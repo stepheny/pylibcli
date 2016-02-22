@@ -11,8 +11,16 @@ class TestFlags(unittest.TestCase):
             self.flags.SomeString
         self.flags.SomeString = "SomeString"
         self.assertEqual(self.flags.SomeString, "SomeString")
-    
+
     def test_flags_setter(self):
         self.flags._.SomeString("SomeString")
         self.assertEqual(self.flags.SomeString, "SomeString")
 
+class TestOption(unittest.TestCase):
+    def test_construct(self):
+        with self.assertRaises(TypeError):
+            getopt.Option()
+        getopt.Option("test", getopt.no_argument, None, 't')
+
+if __name__ == '__main__':
+    unittest.main()
