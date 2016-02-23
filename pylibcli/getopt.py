@@ -163,6 +163,7 @@ class GetoptIter():
             exact = False
             ambig = False
             pfound = None
+            self.optarg = None
             #indfound = 0
             #option_index = None
 
@@ -210,22 +211,27 @@ class GetoptIter():
                         if self.opterr:
                             logger.error(_("{}: option `{}' requires an argument").format(self.argv[0], self.argv[self.optind-1]))
                         self.nextchar = None
-                        return ':' if optstring[0] == ':' else '?'
+                        return ':' if self.optstring[0] == ':' else '?'
                 self.nextchar = None
                 #if self.longind is not None:
                     #self.longind = option_index
                 self.longind = self.longopts.index(pfound)
                 if callable(pfound.flag_setter):
-                    pfound.flag_setter(found.val)
+                    pfound.flag_setter(pfound.val)
+                    return 0
+                return pfound.val
 
             if (not self.long_only) \
-                or (len(self.argv[self.optind]) > 1 and self.argv[self.optind][1] == '-') \
+                or (len(self.argv[self.optind]) > 1 \
+                    and self.argv[self.optind][1] == '-') \
                     or (my_index(self.optstring, self.nextchar) is None):
                 if self.opterr:
-                    if len(self.argv[self.optind]) > 1 and self.argv[self.optind][1] == '-':
+                    if len(self.argv) > self.optind \
+                        and len(self.argv[self.optind]) > 1 \
+                            and self.argv[self.optind][1] == '-':
                         logger.error(_("{}: unrecognized option `--{}'").\
                             format(self.argv[0], self.nextchar))
-                    else:
+                    elif len(self.argv) > self.optind:
                         logger.error(_("{}: unrecognized option `{}{}'").\
                             format(self.argv[0], self.argv[self.optind][0], \
                                 self.nextchar))
@@ -242,7 +248,7 @@ class GetoptIter():
 
         if temp is None or c == ':':
             if self.opterr:
-                if self.posixly_correct:
+                if self.posixly_correct is not None:
                     logger.error(_("{}: illegal option -- {}").format(self.argv[0], c))
                 else:
                     logger.error(_("{}: invalid option -- {}").format(self.argv[0], c))
@@ -287,7 +293,7 @@ class GetoptIter():
                 length = middle - bottom
                 for i in range(length):
                     self.argv[bottom + i], self.argv[top - length + i] = \
-                        self.argv[top - length + 1], self.argv[bottom + i]
+                        self.argv[top - length + i], self.argv[bottom + i]
                 top -= length
             else:
                 length = top - middle
