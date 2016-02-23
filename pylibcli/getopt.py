@@ -317,39 +317,3 @@ def iter_getopt_long(argv, shortopts, longopts):
 def iter_getopt_long_only(argv, shortopts, longopts):
     return GetoptIter(argv, optstring=shortopts, longopts=longopts, \
         longind=None, long_only=True)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
