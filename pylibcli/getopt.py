@@ -97,10 +97,10 @@ class GetoptIter():
         else:
             self.posixly_correct = None
 
-        if self.optstring[0] == '-':
+        if len(self.optstring) > 0 and self.optstring[0] == '-':
             self.ordering = RETURN_IN_ORDER
             self.optstring = self.optstring[1:]
-        elif self.optstring[0] == '+':
+        elif len(self.optstring) > 0 and self.optstring[0] == '+':
             self.ordering = REQUIRE_ORDER
             self.optstring = self.optstring[1:]
         elif self.posixly_correct is not None:
@@ -112,8 +112,6 @@ class GetoptIter():
         return self
 
     def __next__(self):
-        #if self.optind == len(self.argv):
-            #raise StopIteration
         if self.nextchar is None:
             if self.ordering == PERMUTE:
                 if self.first_nonopt != self.last_nonopt \
@@ -147,7 +145,10 @@ class GetoptIter():
 
             if self.argv[self.optind][0] != '-' or len(self.argv[self.optind]) == 1 :
                 if self.ordering == REQUIRE_ORDER:
-                    raise 1
+                    raise StopIteration
+                self.optarg = self.argv[self.optind]
+                self.optind += 1
+                return 1
 
             temp = self.argv[self.optind]
             self.nextchar = temp[1+(self.longopts is not None and len(temp) >= 1 \
@@ -250,7 +251,7 @@ class GetoptIter():
         if len(temp) > 1 and temp[1] == ':':
             if len(temp) > 2 and temp[2] == ':':
                 # This is an option that accepts an argument optionally.
-                if len(self.nextchar) > 0:
+                if self.nextchar is not None and len(self.nextchar) > 0:
                     self.optarg = self.nextchar
                     self.optind += 1
                 else:
