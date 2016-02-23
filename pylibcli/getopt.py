@@ -155,8 +155,82 @@ class GetoptIter():
 
         if self.longopts is not None and (self.argv[self.optind][1] == '-' \
             or (self.long_only and (len(self.argv[self.optind]) >= 3 \
-            or not my_index(self.optstring, self.argv[self.optind][1])))):
-            raise NotImplementedError() # TODO: port long options
+                or not my_index(self.optstring, self.argv[self.optind][1])))):
+            nameend = self.nextchar.find('=')
+            if nameend < 0:
+                nameend = len(self.nextchar)
+            exact = False
+            ambig = False
+            pfound = None
+            #indfound = 0
+            #option_index = None
+
+            for p in self.longopts:
+                #option_index = longopts.index(p)
+                if p.name[:nameend] == self.nextchar[:nameend]:
+                    if nameend == len(p.name):
+                        pfound = p
+                        #indfound = option_index
+                        exact = True
+                        break
+                    elif pfound is None:
+                        pfound = p
+                        #indfound = option_index
+                    else:
+                        ambig = True
+
+            if ambig and not exact:
+                if self.opterr:
+                    logger.error(_("{}: option {} is ambiguous").\
+                        format(self.argv[0], self.argv[self.optind]))
+                self.nextchar = None
+                self.optind += 1
+                return '?'
+
+            if pfound is not None:
+                #option_index = indfound
+                self.optind += 1
+                if self.nextchar[nameend:]:
+                    if pfound.has_arg != no_argument:
+                        self.optarg = self.nextchar[nameend+1:]
+                    else:
+                        if self.opterr:
+                            if len(self.argv[self.optind-1]) > 1 and self.argv[self.optind-1][1] == '-':
+                                logger.error(_("{}: option `--{}' doesn't allow and argument").format(self.argv[0], pfound.name))
+                            else:
+                                logger.error(_("{}: option `{}{}' doesn't allow and argument").format(self.argv[0], self.argv[self.optind-1][0], pfound.name))
+                        self.nextchar = None
+                        return '?'
+                elif pfound.has_arg == required_argument:
+                    if self.optind < len(self.argv):
+                        self.optarg = self.argv[self.optind]
+                        self.optind += 1
+                    else:
+                        if self.opterr:
+                            logger.error(_("{}: option `{}' requires an argument").format(self.argv[0], self.argv[self.optind-1]))
+                        self.nextchar = None
+                        return ':' if optstring[0] == ':' else '?'
+                self.nextchar = None
+                #if self.longind is not None:
+                    #self.longind = option_index
+                self.longind = self.longopts.index(pfound)
+                if callable(pfound.flag_setter):
+                    pfound.flag_setter(found.val)
+
+            if (not self.long_only) \
+                or (len(self.argv[self.optind]) > 1 and self.argv[self.optind][1] == '-') \
+                    or (my_index(self.optstring, self.nextchar) is None):
+                if self.opterr:
+                    if len(self.argv[self.optind]) > 1 and self.argv[self.optind][1] == '-':
+                        logger.error(_("{}: unrecognized option `--{}'").\
+                            format(self.argv[0], self.nextchar))
+                    else:
+                        logger.error(_("{}: unrecognized option `{}{}'").\
+                            format(self.argv[0], self.argv[self.optind][0], \
+                                self.nextchar))
+                self.nextchar = None
+                self.optind += 1
+                return '?'
 
         c = self.nextchar[0]
         self.nextchar = self.nextchar[1:]
@@ -203,15 +277,41 @@ class GetoptIter():
         return c
 
     def exchange(self):
-        raise NotImplementedError()
+        bottom = self.first_nonopt
+        middle = self.last_nonopt
+        top = self.optind
+
+        while top > middle and middle > bottom:
+            if top - middle > middle - bottom:
+                length = middle - bottom
+                for i in range(length):
+                    self.argv[bottom + i], self.argv[top - length + i] = \
+                        self.argv[top - length + 1], self.argv[bottom + i]
+                top -= length
+            else:
+                length = top - middle
+                for i in range(length):
+                    self.argv[bottom + i], self.argv[middle + i] = \
+                        self.argv[middle + i], self.argv[bottom + i]
+                bottom += length
+
+        self.first_nonopt += self.optind - self.last_nonopt
+        self.last_nonopt = self.optind
 
 
 def iter_getopt(argv, shortopts):
-    return GetoptIter(argv, optstring=shortopts, longopts=None, longind=None, long_only=None)
+    return GetoptIter(argv, optstring=shortopts, longopts=None, \
+        longind=None, long_only=None)
+
+def iter_getopt_long(argv, shortopts, longopts):
+    return GetoptIter(argv, optstring=shortopts, longopts=longopts, \
+        longind=None, long_only=None)
+
+def iter_getopt_long_only(argv, shortopts, longopts):
+    return GetoptIter(argv, optstring=shortopts, longopts=longopts, \
+        longind=None, long_only=True)
 
 
-def getopt_long(argv, shortopts=None, longopts=[]):
-    pass
 
 
 
