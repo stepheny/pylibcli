@@ -1,4 +1,8 @@
 #! /usr/bin/env python3
+"""
+Equivalent to
+http://www.gnu.org/software/libc/manual/html_node/Getopt-Long-Option-Example.html
+"""
 
 import sys
 import os
