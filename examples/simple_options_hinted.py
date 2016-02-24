@@ -3,7 +3,7 @@ import pylibcli.opttools
 
 #pylibcli.opttools.DEBUG = True
 
-@default
+@default(aflag='_a', bflag='_b', cvalue='c:int,float')
 def main(*args, aflag=None, bflag=None, cvalue=None):
     """Parse the args.
 

@@ -23,8 +23,9 @@ class CommandHandler():
         self._func = func
         self._ref = _ref
         self.name = func.__name__ if _name is None else _name
-        self.argstype = kwargs
+        self.hint = kwargs
         self.opts = None
+        self.alias = None
         if DEBUG:
             self.build_opts()
 
@@ -41,7 +42,12 @@ class CommandHandler():
         #args = []
         gi = getopt.iter_getopt_long(argv, self.shortopts, self.longopts)
         for i in gi:
-            kwargs[i] = self.format_value(i, gi.optarg)
+            if i in self.opts:
+                kwargs[i] = self.format_value(i, gi.optarg)
+            elif i in self.alias:
+                i = self.alias[i]
+                if DEBUG: print('aliaed:', i)
+                kwargs[i] = self.format_value(i, gi.optarg)
         args = gi.argv[gi.optind:]
         self._func(*args, **kwargs)
 
@@ -49,6 +55,7 @@ class CommandHandler():
         if self.opts is not None:
             return
         self.opts = {}
+        self.alias = {}
         # Build longopts from func signature
         fas = inspect.getfullargspec(self._func)
         if len(fas.args) > 1:
@@ -57,15 +64,15 @@ class CommandHandler():
                 'varargs and keyword-only arguments instead.'.\
                     format(self._func.__name__))
         self.longopts = []
+        self.shortopts = ''
         # positional args
         if len(fas.args) == 1:
             self.longopts.append(self.parse_opt(fas.args[0]))
         # keyword only args
         for i in fas.kwonlyargs:
             if not i.startswith('_'):
-                self.longopts.append(self.parse_opt(i))
+                self.longopts.extend(self.parse_opt(i))
 
-        self.shortopts = 'ab'
 
         if DEBUG:
             from pprint import pprint
@@ -80,7 +87,64 @@ class CommandHandler():
         if name in self.opts:
             return
         self.opts[name] = {}
-        if self._func.__doc__ is not None:
+        if name in self.hint:
+            if DEBUG: print('hint:', name, self.hint[name])
+            hint = self.hint[name]
+            # If 
+            if hint.startswith('_'):
+                shortonly = True
+                hint = hint[1:]
+            else:
+                shortonly = False
+            i = hint.find(':')
+            if i < 0:
+                shortopts = hint
+                hint = ''
+            else:
+                shortopts = hint[:i]
+                hint = hint[i:]
+            for i in shortopts:
+                if i in self.alias:
+                    raise StructureError('Shortopt "{}" duplicated defined'.\
+                        format(i))
+            else:
+                self.alias[i] = name
+            if hint.startswith('::'):
+                req = getopt.optional_argument
+                for i in shortopts:
+                    self.shortopts += i + '::'
+                htype = hint[2:].split('=')
+                if len(htype) != 2:
+                    raise StructureError('Option "{}" optional value requires '\
+                        'a default value'.format(name))
+                if htype[0]:
+                    self.opts[name]['type'] = htype[0].split(',')
+                else:
+                    self.opts[name]['type'] = ['int', 'float', 'str']
+                self.opts[name]['default'] = htype[1]
+            elif hint.startswith(':'):
+                req = getopt.required_argument
+                for i in shortopts:
+                    self.shortopts += i + ':'
+                htype = hint[1:].split('=')
+                if len(htype) != 1:
+                    raise StructureError('Option "{}" required value should '\
+                        'not define a default value'.format(name))
+                if htype[0]:
+                    self.opts[name]['type'] = htype[0].split(',')
+                else:
+                    self.opts[name]['type'] = ['int', 'float', 'str']
+            else:
+                req = getopt.no_argument
+                for i in shortopts:
+                    self.shortopts += i
+                self.opts[name]['type'] = ['flag']
+            if shortonly:
+                return []
+            else:
+                return [getopt.Option(name, req, None, name)]
+
+        elif self._func.__doc__ is not None:
             # Try parse function docstring ':param type name: help'
             regex = re.compile(r'^\s*:param\s+(\w+)\s+{}:\s*(.*)\s*$'.format(name), re.M)
             result = regex.findall(self._func.__doc__)
@@ -133,7 +197,7 @@ class CommandHandler():
 
         if 'type' not in self.opts[name]:
             # Use a dafult fallback
-            self.opts[name]['type'] = ['int', 'str', 'flag']
+            self.opts[name]['type'] = ['int', 'float', 'str', 'flag']
 
         if self.opts[name]['type'] in (['flag'], ['none']):
             req = getopt.no_argument
@@ -143,7 +207,7 @@ class CommandHandler():
             req = getopt.required_argument
 
         # Option.val should be int or char, but with python, str is also usable.
-        return getopt.Option(name, req, None, name)
+        return [getopt.Option(name, req, None, name)]
 
     def format_value(self, name, value):
         if 'type' not in self.opts[name]:
@@ -183,12 +247,12 @@ class CommandHandler():
                     raise NotImplementedError('dict currently not supported')
                 elif i == 'flag':
                     if value is None:
-                        return None
+                        return ''
                     else:
                         continue
                 elif i == 'none':
                     if value is None:
-                        return None
+                        return ''
                     else:
                         continue
                 else:
@@ -196,7 +260,7 @@ class CommandHandler():
                     if DEBUG:
                         break
                     continue
-            except TypeError:
+            except (TypeError, ValueError, AttributeError):
                 pass
         raise OptionError('Option "{}" should be "{}" but got invalid value "{}"'.\
             format(name, '" or "'.join(self.opts[name]['type']), value))
