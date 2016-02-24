@@ -306,6 +306,21 @@ class TestGetoptLong(unittest.TestCase):
             self.assertTrue(stderr.tell() == 0)
             self.callback.assert_called_once_with(1)
 
+    def test_getopt_long_with_no_short_option(self):
+        with unittest.mock.patch('sys.stderr', new=io.StringIO()) as stderr:
+            argv = "testopt arg0 --noarg --required=req --optional".split()
+            gi = getopt.iter_getopt_long(argv, '', self.longopts)
+            for i in [
+                (0,   1, '?', 3, None),
+                ('c', 1, '?', 4, 'req'),
+                ('d', 1, '?', 5, None)]:
+                self.assertEqual(i , (gi.__next__(), \
+                    gi.opterr, gi.optopt, gi.optind, gi.optarg))
+            self.assertEqual(list(gi), [])
+            self.assertEqual(gi.argv[gi.optind:], ['arg0'])
+            self.assertTrue(stderr.tell() == 0)
+            self.callback.assert_called_once_with(1)
+
     def test_getopt_long_with_partial_option(self):
         with unittest.mock.patch('sys.stderr', new=io.StringIO()) as stderr:
             argv = "testopt -a -b --no --required=req --optional".split()

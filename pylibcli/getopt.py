@@ -211,7 +211,7 @@ class GetoptIter():
                         if self.opterr:
                             logger.error(_("{}: option `{}' requires an argument").format(self.argv[0], self.argv[self.optind-1]))
                         self.nextchar = None
-                        return ':' if self.optstring[0] == ':' else '?'
+                        return ':' if len(self.optstring) > 0 and self.optstring[0] == ':' else '?'
                 self.nextchar = None
                 #if self.longind is not None:
                     #self.longind = option_index
