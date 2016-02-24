@@ -19,10 +19,11 @@ class StructureError(Exception):
 
 
 class CommandHandler():
-    def __init__(self, func, *, name=None, logger=None, alias=None, ref=None):
+    def __init__(self, func, *, _=None, _name=None, _ref=None, **kwargs):
         self._func = func
-        self._ref = ref
-        self.name = func.__name__ if name is None else name
+        self._ref = _ref
+        self.name = func.__name__ if _name is None else _name
+        self.argstype = kwargs
         self.opts = None
         if DEBUG:
             self.build_opts()
@@ -36,7 +37,13 @@ class CommandHandler():
             for i in gi:
                 print(i , gi.opterr, gi.optopt, gi.optind, gi.optarg)
             print(gi.argv[gi.optind:])
-        self._func()
+        kwargs = {}
+        #args = []
+        gi = getopt.iter_getopt_long(argv, self.shortopts, self.longopts)
+        for i in gi:
+            kwargs[i] = self.format_value(i, gi.optarg)
+        args = gi.argv[gi.optind:]
+        self._func(*args, **kwargs)
 
     def build_opts(self):
         if self.opts is not None:
@@ -50,11 +57,13 @@ class CommandHandler():
                 'varargs and keyword-only arguments instead.'.\
                     format(self._func.__name__))
         self.longopts = []
-        #O, n, r, o = getopt.Option, getopt.no_argument, \
-            #getopt.required_argument, getopt.optional_argument
+        # positional args
+        if len(fas.args) == 1:
+            self.longopts.append(self.parse_opt(fas.args[0]))
         # keyword only args
         for i in fas.kwonlyargs:
-            self.longopts.append(self.parse_opt(i))
+            if not i.startswith('_'):
+                self.longopts.append(self.parse_opt(i))
 
         self.shortopts = 'ab'
 
@@ -103,7 +112,7 @@ class CommandHandler():
                     if i != 'or':
                         self.opts[name]['type'].append(i)
 
-        print(inspect.getfullargspec(self._func))
+        if DEBUG: print(inspect.getfullargspec(self._func))
         if 'type' not in self.opts[name]:
             fas = inspect.getfullargspec(self._func)
             # Try guess type by default value
@@ -126,7 +135,9 @@ class CommandHandler():
             # Use a dafult fallback
             self.opts[name]['type'] = ['int', 'str', 'flag']
 
-        if 'flag' in self.opts[name]['type'] or 'none' in self.opts[name]['type']:
+        if self.opts[name]['type'] in (['flag'], ['none']):
+            req = getopt.no_argument
+        elif 'flag' in self.opts[name]['type'] or 'none' in self.opts[name]['type']:
             req = getopt.optional_argument
         else:
             req = getopt.required_argument
@@ -162,7 +173,7 @@ class CommandHandler():
                     return float(value)
                 elif i == 'str':
                     return str(value)
-                elif i == 'boot':
+                elif i == 'bool':
                     return value.lower() not in ('0', 'n', 'no', 'f', 'false', \
                         'nil', 'nul', 'null', 'none', '-')
                 elif i == 'list':
@@ -171,9 +182,15 @@ class CommandHandler():
                 elif i == 'dict':
                     raise NotImplementedError('dict currently not supported')
                 elif i == 'flag':
-                    continue # silently skip
+                    if value is None:
+                        return None
+                    else:
+                        continue
                 elif i == 'none':
-                    continue # silently skip
+                    if value is None:
+                        return None
+                    else:
+                        continue
                 else:
                     logger.warn('Type "{}" is not supported, skipped'.format(i))
                     if DEBUG:
@@ -181,7 +198,8 @@ class CommandHandler():
                     continue
             except TypeError:
                 pass
-        raise OptionError('Option "{}" got invalid value "{}"'.format(name, value))
+        raise OptionError('Option "{}" should be "{}" but got invalid value "{}"'.\
+            format(name, '" or "'.join(self.opts[name]['type']), value))
 
 
 class OptionHandler():
@@ -216,7 +234,7 @@ class OptionHandler():
                 filename = os.path.relpath(caller.filename)
                 ref = '{}:{}'.format(filename, caller.lineno)
                 #print('ref:', ref)
-            self._default = CommandHandler(func, **kwargs, ref=ref)
+            self._default = CommandHandler(func, **kwargs, _ref=ref)
             return func
         else:
             if self._default._ref:
