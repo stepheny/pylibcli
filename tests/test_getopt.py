@@ -304,6 +304,7 @@ class TestGetoptLong(unittest.TestCase):
             self.assertEqual(list(gi), [])
             self.assertEqual(gi.argv[gi.optind:], [])
             self.assertTrue(stderr.tell() == 0)
+            self.callback.assert_called_once_with(1)
 
     def test_getopt_long_with_partial_option(self):
         with unittest.mock.patch('sys.stderr', new=io.StringIO()) as stderr:
@@ -443,6 +444,7 @@ class TestGetoptLongOnly(unittest.TestCase):
             self.assertEqual(list(gi), [])
             self.assertEqual(gi.argv[gi.optind:], [])
             self.assertTrue(stderr.tell() == 0)
+            self.callback.assert_called_once_with(1)
 
     def test_getopt_long_only_with_invalid_option(self):
         with unittest.mock.patch('sys.stderr', new=io.StringIO()) as stderr:
