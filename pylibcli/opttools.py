@@ -33,25 +33,14 @@ class CommandHandler():
 
     def __call__(self, argv, *, last=None):
         self.build_opts()
-        if DEBUG:
-            print('"{}" called'.format(self.name))
-            print(argv, repr(self.shortopts), self.longopts, sep='\n')
-            gi = getopt.iter_getopt_long(argv, self.shortopts, self.longopts)
-            for i in gi:
-                print(i , gi.opterr, gi.optopt, gi.optind, gi.optarg)
-            print(gi.argv[gi.optind:])
         kwargs = {}
-        #args = []
         gi = getopt.iter_getopt_long(argv, self.shortopts, self.longopts)
         for i in gi:
             if i in self.opts:
                 kwargs[i] = self.format_value(i, gi.optarg)
             elif i in self.alias:
                 i = self.alias[i]
-                if DEBUG: print('aliaed:', i)
                 kwargs[i] = self.format_value(i, gi.optarg)
-        #if last is not None:
-            #kwargs['self'] = last
         args = gi.argv[gi.optind:]
 
         fas = inspect.getfullargspec(self._func)
@@ -78,10 +67,6 @@ class CommandHandler():
         if fas.varargs is not None:
             reqnarg = len(args)
 
-        print(fas, self._func.__name__)
-        print(self._func)
-        print(self._func.__class__)
-        print(args, args[:reqnarg], args[reqnarg:])
         return self._func(*args[:reqnarg], **kwargs), args[reqnarg:]
 
     def build_opts(self):
@@ -121,9 +106,7 @@ class CommandHandler():
             return
         self.opts[name] = {'alias': []}
         if name in self.hint:
-            if DEBUG: print('hint:', name, self.hint[name])
             hint = self.hint[name]
-            # If 
             if hint.startswith('_'):
                 shortonly = True
                 hint = hint[1:]
@@ -211,7 +194,6 @@ class CommandHandler():
                     if i != 'or':
                         self.opts[name]['type'].append(i)
 
-        if DEBUG: print(inspect.getfullargspec(self._func))
         if 'type' not in self.opts[name]:
             fas = inspect.getfullargspec(self._func)
             # Try guess type by default value
@@ -330,7 +312,6 @@ class OptionHandler():
                 caller = inspect.getouterframes(cur, 2)[1]
                 filename = os.path.relpath(caller.filename)
                 ref = '{}:{}'.format(filename, caller.lineno)
-                #print('ref:', ref)
             kwargs['_'] = _
             self._command[name] = CommandHandler(func, **kwargs, _ref=ref)
         return func
@@ -347,7 +328,6 @@ class OptionHandler():
                 caller = inspect.getouterframes(cur, 2)[1]
                 filename = os.path.relpath(caller.filename)
                 ref = '{}:{}'.format(filename, caller.lineno)
-                #print('ref:', ref)
             kwargs['_'] = _
             self._default = CommandHandler(func, **kwargs, _ref=ref)
             return func

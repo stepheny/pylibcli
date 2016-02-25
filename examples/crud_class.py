@@ -9,7 +9,7 @@ from pprint import pprint
 from pylibcli import default, command, error, run
 import pylibcli.opttools
 
-logger = logging.getLogger('crud_class')
+logger = logging.getLogger('crud')
 
 @error(errno=1)
 class KeyExisted(Exception):
@@ -25,8 +25,13 @@ class Storage():
         super().__init__()
         self.filename = filename or 'crud.log'
         self.data = None # lazy load
+        self.dirty = None
         if verbose:
             logging.basicConfig(level = logging.DEBUG)
+
+    def __del__(self):
+        if self.dirty:
+            self._save()
 
     def load(self):
         if self.data is not None:
@@ -43,8 +48,12 @@ class Storage():
             logger.error('Malformatted file: "{}"'.format(self.filename))
         logger.info('Using empty storage.')
         self.data = {}
+        self.dirty = None
 
-    def save(self):
+    def save(self): # lazy save
+        self.dirty = True
+
+    def _save(self):
         try:
             logger.debug('Saving to file: "{}"'.format(self.filename))
             with open(self.filename, 'w') as f:
