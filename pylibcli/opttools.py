@@ -93,13 +93,10 @@ class CommandHandler():
 
 
         if DEBUG:
-            from pprint import pprint
-            print('parsed opts:')
-            pprint(self.opts)
-            print('parsed longopts:')
-            pprint(self.longopts)
-            print('parsed shortopts:')
-            pprint(self.shortopts)
+            print('  short option string: "{}"'.format(self.shortopts), file=sys.stderr)
+            print('  long options:', file=sys.stderr)
+            print('    "{}"'.format('", "'.join([x.name for x in self.longopts])), \
+                file=sys.stderr) 
 
     def parse_opt(self, name):
         if name in self.opts:
@@ -156,11 +153,38 @@ class CommandHandler():
                 for i in shortopts:
                     self.shortopts += i
                 self.opts[name]['type'] = ['flag']
+
             if shortonly:
-                return []
+                ret = []
             else:
                 self.opts[name]['alias'].append('--'+name)
-                return [getopt.Option(name, req, None, name)]
+                ret = [getopt.Option(name, req, None, name)]
+            if self._func.__doc__ is not None:
+                # Try parse function docstring ':param [type] name: help'
+                regex = re.compile(r'^\s*:param[\w\s]+{}:\s*(.*)\s*$'.format(name), re.M)
+                result = regex.findall(self._func.__doc__)
+                if len(result) > 1:
+                    raise StructureError('param "{}" type duplicated defined'.format(name))
+                elif len(result) == 1:
+                    self.opts[name]['help'] = result[0]
+            else:
+                self.opts[name]['help'] = None
+
+            if DEBUG:
+                NRO = (' no', '', ' optional')
+                print('  Option "{}" requires{} argument'.format(name,  \
+                    NRO[req.value]), file=sys.stderr)
+                print('    available as "{}"'.format('", "'.join( \
+                    self.opts[name]['alias'])), file=sys.stderr)
+                if req != getopt.no_argument:
+                    print('    argument type prefered "{}"'.format('", "'.join( \
+                        self.opts[name]['type'])), file=sys.stderr)
+                if self.opts[name]['help'] is not None:
+                    print('    with docstring: "{}"'.format( \
+                        self.opts[name]['help']), file=sys.stderr)
+                else:
+                    print('    docstring not available', file=sys.stderr)
+            return ret
 
         elif self._func.__doc__ is not None:
             # Try parse function docstring ':param type name: help'
@@ -170,7 +194,7 @@ class CommandHandler():
                 raise StructureError('param "{}" type duplicated defined'.format(name))
             elif len(result) == 1:
                 self.opts[name]['type'] = [result[0][0].lower()]
-                self.opts[name]['help'] = [result[0][1]]
+                self.opts[name]['help'] = result[0][1]
 
             # Try parse function docstring ':param name: help'
             regex = re.compile(r'^\s*:param\s+{}:\s*(.*)\s*$'.format(name), re.M)
@@ -313,6 +337,11 @@ class OptionHandler():
                 filename = os.path.relpath(caller.filename)
                 ref = '{}:{}'.format(filename, caller.lineno)
             kwargs['_'] = _
+            if DEBUG:
+                if ref:
+                    print('\nCommand "{}" at [{}]:'.format(name, ref), file=sys.stderr)
+                else:
+                    print('\nCommand "{}":'.format(name), file=sys.stderr)
             self._command[name] = CommandHandler(func, **kwargs, _ref=ref)
         return func
 
@@ -329,6 +358,11 @@ class OptionHandler():
                 filename = os.path.relpath(caller.filename)
                 ref = '{}:{}'.format(filename, caller.lineno)
             kwargs['_'] = _
+            if DEBUG:
+                if ref:
+                    print('\nDefault command at [{}]:'.format(ref), file=sys.stderr)
+                else:
+                    print('\nDefault command:', file=sys.stderr)
             self._default = CommandHandler(func, **kwargs, _ref=ref)
             return func
         else:

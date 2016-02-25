@@ -10,6 +10,7 @@ from pylibcli import default, command, error, run
 import pylibcli.opttools
 
 logger = logging.getLogger('crud')
+#pylibcli.opttools.DEBUG = True
 
 @error(errno=1)
 class KeyExisted(Exception):
