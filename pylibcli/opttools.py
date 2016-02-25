@@ -253,8 +253,8 @@ class CommandHandler():
         return [getopt.Option(name, req, None, name)]
 
     def format_value(self, name, value):
-        if 'type' not in self.opts[name]:
-            return value
+        #if 'type' not in self.opts[name]: # Should not happen
+            #return value
         for i in self.opts[name]['type']:
             try:
                 if i == 'int':
