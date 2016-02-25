@@ -23,6 +23,7 @@ class CommandHandler():
     def __init__(self, func, *, _=None, _name=None, _ref=None, **kwargs):
         self._func = func
         self._ref = _ref
+        self._ = _
         self.name = func.__name__ if _name is None else _name
         self.hint = kwargs
         self.opts = None
@@ -30,7 +31,7 @@ class CommandHandler():
         if DEBUG:
             self.build_opts()
 
-    def __call__(self, argv):
+    def __call__(self, argv, *, last=None):
         self.build_opts()
         if DEBUG:
             print('"{}" called'.format(self.name))
@@ -49,6 +50,8 @@ class CommandHandler():
                 i = self.alias[i]
                 if DEBUG: print('aliaed:', i)
                 kwargs[i] = self.format_value(i, gi.optarg)
+        #if last is not None:
+            #kwargs['self'] = last
         args = gi.argv[gi.optind:]
 
         fas = inspect.getfullargspec(self._func)
@@ -58,8 +61,28 @@ class CommandHandler():
                 raise OptionError('Option "{}" should be provide with "{}"'.\
                     format(i, " or ".join(self.opts[i]['alias'])))
 
-        # TODO: chained call
-        return self._func(*args, **kwargs), []
+        if self._func.__class__ is type: # Constructor
+            if fas.args and fas.args[0] == 'self':
+                del fas.args[0]
+
+        if last is not None:
+            args.insert(0, last)
+
+        reqnarg = (0 if fas.args is None else len(fas.args)) \
+            - (0 if fas.defaults is None else len(fas.defaults))
+        for i in range(reqnarg):
+            if fas.args[i] in kwargs:
+                reqnarg -= 1
+        if reqnarg > len(args):
+            raise OptionError('Not enough positional argument')
+        if fas.varargs is not None:
+            reqnarg = len(args)
+
+        print(fas, self._func.__name__)
+        print(self._func)
+        print(self._func.__class__)
+        print(args, args[:reqnarg], args[reqnarg:])
+        return self._func(*args[:reqnarg], **kwargs), args[reqnarg:]
 
     def build_opts(self):
         if self.opts is not None:
@@ -74,7 +97,7 @@ class CommandHandler():
                 'varargs and keyword-only arguments instead.'.\
                     format(self._func.__name__))
         self.longopts = []
-        self.shortopts = ''
+        self.shortopts = '' if self._ is None else self._
         # positional args
         if len(fas.args) == 1:
             self.longopts.extend(self.parse_opt(fas.args[0]))
@@ -117,9 +140,9 @@ class CommandHandler():
                 if i in self.alias:
                     raise StructureError('Shortopt "{}" duplicated defined'.\
                         format(i))
-            else:
-                self.alias[i] = name
-                self.opts[name]['alias'].append('-'+i)
+                else:
+                    self.alias[i] = name
+                    self.opts[name]['alias'].append('-'+i)
             if hint.startswith('::'):
                 req = getopt.optional_argument
                 for i in shortopts:
@@ -285,7 +308,7 @@ class OptionHandler():
         self._default = None
         self._error = collections.OrderedDict()
 
-    def command(self, func=None, **kwargs):
+    def command(self, func=None, _='+', **kwargs):
         cur = inspect.currentframe()
         if func is None:
             return functools.partial(self.command, **kwargs)
@@ -308,6 +331,7 @@ class OptionHandler():
                 filename = os.path.relpath(caller.filename)
                 ref = '{}:{}'.format(filename, caller.lineno)
                 #print('ref:', ref)
+            kwargs['_'] = _
             self._command[name] = CommandHandler(func, **kwargs, _ref=ref)
         return func
 
@@ -352,11 +376,11 @@ class OptionHandler():
         if logger is None:
             logger = _logger
         if callable(self._default):
-            last, argv = self._default(argv)
+            last, argv = self._default(argv, last=last)
         else:
             argv = argv[1:]
         while argv:
             if argv[0] in self._command:
-                last, argv = self._command[argv[0]](argv)
+                last, argv = self._command[argv[0]](argv, last=last)
             else:
                 raise OptionError('Unknow command "{}"'.format(argv[0]))

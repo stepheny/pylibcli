@@ -61,7 +61,7 @@ def delete(key):
     if key in data:
         del data[key]
     else:
-        raise KeyNotExits()
+        raise KeyNotExist()
     write_to_disk(data)
 
 @command(_name='list')
