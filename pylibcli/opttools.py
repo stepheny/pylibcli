@@ -41,6 +41,9 @@ class CommandHandler():
             elif i in self.alias:
                 i = self.alias[i]
                 kwargs[i] = self.format_value(i, gi.optarg)
+            else:
+                raise OptionError('Invalid option: "{}" with value: "{}"'.\
+                    format(gi.optopt, gi.optarg))
         args = gi.argv[gi.optind:]
 
         fas = inspect.getfullargspec(self._func)
@@ -389,12 +392,23 @@ class OptionHandler():
             argv = sys.argv
         if logger is None:
             logger = _logger
-        if callable(self._default):
-            last, argv = self._default(argv, last=last)
-        else:
-            argv = argv[1:]
-        while argv:
-            if argv[0] in self._command:
-                last, argv = self._command[argv[0]](argv, last=last)
+        try:
+            if callable(self._default):
+                last, argv = self._default(argv, last=last)
             else:
-                raise OptionError('Unknow command "{}"'.format(argv[0]))
+                argv = argv[1:]
+            while argv:
+                if argv[0] in self._command:
+                    last, argv = self._command[argv[0]](argv, last=last)
+                else:
+                    raise OptionError('Unknow command "{}"'.format(argv[0]))
+        except tuple(self._error) as ex:
+            if 'errno' in self._error[ex]:
+                errno = self._error[ex]['errno']
+            else:
+                errno = 127
+            logger.error(ex)
+            sys.exit(errno)
+        except OptionError as ex:
+            logger.error(ex)
+            sys.exit(127)
