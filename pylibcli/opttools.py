@@ -226,18 +226,16 @@ class CommandHandler():
             # Try guess type by default value
             if fas.kwonlydefaults is not None and name in fas.kwonlydefaults:
                 val = fas.kwonlydefaults[name]
-                if isinstance(val, int):
-                    self.opts[name]['type'] = ['int']
-                elif isinstance(val, str):
-                    self.opts[name]['type'] = ['str']
-                elif isinstance(val, bool):
+                if isinstance(val, bool): # issubclass(bool, int)
                     self.opts[name]['type'] = ['bool']
+                elif isinstance(val, int):
+                    self.opts[name]['type'] = ['int']
                 elif isinstance(val, str):
                     self.opts[name]['type'] = ['str']
                 elif isinstance(val, list):
                     self.opts[name]['type'] = ['list']
                 elif isinstance(val, dict):
-                    raise NotImplementedError('dict currently not supported')
+                    self.opts[name]['type'] = ['dict']
 
         if 'type' not in self.opts[name]:
             # Use a dafult fallback
@@ -289,7 +287,11 @@ class CommandHandler():
                     # Currently only list of str
                     return value.split(',')
                 elif i == 'dict':
-                    raise NotImplementedError('dict currently not supported')
+                    ret = []
+                    for i in value.split(','):
+                        kv = i.split('=', 1)
+                        ret.append(tuple(kv) if len(kv) == 2 else (kv[0], None))
+                    return ret
                 elif i == 'flag':
                     if value is None:
                         return ''
