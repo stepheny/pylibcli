@@ -4,7 +4,7 @@ import pylibcli.opttools
 #pylibcli.opttools.DEBUG = True
 
 @default(aflag='_a', bflag='_b', cvalue='c:int,float')
-def main(*args, aflag=None, bflag=None, cvalue=None):
+def main(*args, aflag=None, bflag=None, cvalue):
     """Parse the args.
 
     :param aflag: Set aflag

@@ -2,13 +2,14 @@ import sys
 import os
 import functools
 import re
+import collections
 import logging
 import inspect
 
 from . import getopt
 
 DEBUG = False
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 class OptionError(Exception):
     pass
@@ -49,7 +50,16 @@ class CommandHandler():
                 if DEBUG: print('aliaed:', i)
                 kwargs[i] = self.format_value(i, gi.optarg)
         args = gi.argv[gi.optind:]
-        self._func(*args, **kwargs)
+
+        fas = inspect.getfullargspec(self._func)
+        for i in fas.kwonlyargs:
+            if i not in kwargs and fas.kwonlydefaults is not None \
+                and i not in fas.kwonlydefaults:
+                raise OptionError('Option "{}" should be provide with "{}"'.\
+                    format(i, " or ".join(self.opts[i]['alias'])))
+
+        # TODO: chained call
+        return self._func(*args, **kwargs), []
 
     def build_opts(self):
         if self.opts is not None:
@@ -67,7 +77,7 @@ class CommandHandler():
         self.shortopts = ''
         # positional args
         if len(fas.args) == 1:
-            self.longopts.append(self.parse_opt(fas.args[0]))
+            self.longopts.extend(self.parse_opt(fas.args[0]))
         # keyword only args
         for i in fas.kwonlyargs:
             if not i.startswith('_'):
@@ -86,7 +96,7 @@ class CommandHandler():
     def parse_opt(self, name):
         if name in self.opts:
             return
-        self.opts[name] = {}
+        self.opts[name] = {'alias': []}
         if name in self.hint:
             if DEBUG: print('hint:', name, self.hint[name])
             hint = self.hint[name]
@@ -109,6 +119,7 @@ class CommandHandler():
                         format(i))
             else:
                 self.alias[i] = name
+                self.opts[name]['alias'].append('-'+i)
             if hint.startswith('::'):
                 req = getopt.optional_argument
                 for i in shortopts:
@@ -142,6 +153,7 @@ class CommandHandler():
             if shortonly:
                 return []
             else:
+                self.opts[name]['alias'].append('--'+name)
                 return [getopt.Option(name, req, None, name)]
 
         elif self._func.__doc__ is not None:
@@ -180,7 +192,7 @@ class CommandHandler():
         if 'type' not in self.opts[name]:
             fas = inspect.getfullargspec(self._func)
             # Try guess type by default value
-            if name in fas.kwonlydefaults:
+            if fas.kwonlydefaults is not None and name in fas.kwonlydefaults:
                 val = fas.kwonlydefaults[name]
                 if isinstance(val, int):
                     self.opts[name]['type'] = ['int']
@@ -206,6 +218,7 @@ class CommandHandler():
         else:
             req = getopt.required_argument
 
+        self.opts[name]['alias'].append('--'+name)
         # Option.val should be int or char, but with python, str is also usable.
         return [getopt.Option(name, req, None, name)]
 
@@ -256,7 +269,7 @@ class CommandHandler():
                     else:
                         continue
                 else:
-                    logger.warn('Type "{}" is not supported, skipped'.format(i))
+                    _logger.warn('Type "{}" is not supported, skipped'.format(i))
                     if DEBUG:
                         break
                     continue
@@ -268,24 +281,37 @@ class CommandHandler():
 
 class OptionHandler():
     def __init__(self):
-        self._command = []
+        self._command = collections.OrderedDict()
         self._default = None
+        self._error = collections.OrderedDict()
 
     def command(self, func=None, **kwargs):
         cur = inspect.currentframe()
         if func is None:
             return functools.partial(self.command, **kwargs)
-        self._command.append(CommandHandler(func))
-        name = kwargs['name'] if 'name' in kwargs else func.__name__
-        for i in self._command:
-            if name == i.name:
-                if i._ref:
-                    raise StructureError('Command "{}" already defined at [{}]'.format( \
-                        name, self._default._ref))
-                else:
-                    raise StructureError('Command "{}" already defined'.format(name))
+        #self._command.append(CommandHandler(func))
+        name = kwargs['_name'] if '_name' in kwargs else func.__name__
+        if name in self._command:
+            if i._ref:
+                raise StructureError('Command "{}" already defined at [{}]'.format( \
+                    name, self._command[name]._ref))
+            else:
+                raise StructureError('Command "{}" already defined'.format(name))
+        elif not callable(func):
+            raise StructureError('Command "{}" not callable'.format(name))
+        else:
+            if cur is None:
+                # Python stack frame support not available
+                ref = None
+            else:
+                caller = inspect.getouterframes(cur, 2)[1]
+                filename = os.path.relpath(caller.filename)
+                ref = '{}:{}'.format(filename, caller.lineno)
+                #print('ref:', ref)
+            self._command[name] = CommandHandler(func, **kwargs, _ref=ref)
+        return func
 
-    def default(self, func=None, **kwargs):
+    def default(self, func=None, _='+', **kwargs):
         cur = inspect.currentframe()
         if func is None:
             return functools.partial(self.default, **kwargs)
@@ -298,6 +324,7 @@ class OptionHandler():
                 filename = os.path.relpath(caller.filename)
                 ref = '{}:{}'.format(filename, caller.lineno)
                 #print('ref:', ref)
+            kwargs['_'] = _
             self._default = CommandHandler(func, **kwargs, _ref=ref)
             return func
         else:
@@ -306,8 +333,30 @@ class OptionHandler():
                     self._default._ref))
             else:
                 raise StructureError('Default already defined')
+        return func
 
-    def run(self, argv=None):
+    def error(self, ext=None, **kwargs):
+        cur = inspect.currentframe()
+        if ext is None:
+            return functools.partial(self.error, **kwargs)
+        elif not issubclass(ext, Exception):
+            raise StructureError('Error "{}" should be subclass of "Exception"'.\
+                format())
+        else:
+            self._error[ext] = kwargs
+        return ext
+
+    def run(self, argv=None, *, last=None, logger=None):
         if argv is None:
             argv = sys.argv
-        self._default(argv)
+        if logger is None:
+            logger = _logger
+        if callable(self._default):
+            last, argv = self._default(argv)
+        else:
+            argv = argv[1:]
+        while argv:
+            if argv[0] in self._command:
+                last, argv = self._command[argv[0]](argv)
+            else:
+                raise OptionError('Unknow command "{}"'.format(argv[0]))
