@@ -6,11 +6,9 @@ import unittest.mock
 from pylibcli import default, command, error, run
 import pylibcli.opttools as opttools
 
-@error
 class TestException(Exception):
     pass
 
-@error(errno=32)
 class TestException32(Exception):
     pass
 
@@ -85,6 +83,41 @@ class TestCommandHandler(unittest.TestCase):
             def func(*, a, b):
                 self.mock(a, b)
             opttools.CommandHandler(func, a='::', b='::=')(['test', 'a', 'b'])
+
+
+class TestOptionHandler(unittest.TestCase):
+    def setUp(self):
+        self.opthdr = opttools.OptionHandler()
+        self.opthdr.error(TestException)
+        self.opthdr.error(TestException32, errno=32)
+        self.mock = unittest.mock.MagicMock()
+
+    def test_optionhandler_run(self):
+        @self.opthdr.command
+        @self.opthdr.default
+        def func(*args):
+            self.mock(*args)
+        self.opthdr.run(['test', 'arg0', 'arg1', 'arg2'])
+        self.mock.assert_called_once_with('arg0', 'arg1', 'arg2')
+
+    def test_optionhandler_run_sys_argv(self):
+        @self.opthdr.command
+        @self.opthdr.default
+        def func(*args):
+            self.mock(*args)
+        with unittest.mock.patch('sys.argv', ['test', 'arg0', 'arg1', 'arg2']):
+            self.opthdr.run()
+            self.mock.assert_called_once_with('arg0', 'arg1', 'arg2')
+
+    def test_optionhandler_run_withoud_stack_frame(self):
+        with unittest.mock.patch('inspect.currentframe', lambda: None):
+            @self.opthdr.command
+            @self.opthdr.default
+            def func(*args):
+                self.mock(*args)
+            self.opthdr.run(['test', 'arg0', 'arg1', 'arg2'])
+            self.mock.assert_called_once_with('arg0', 'arg1', 'arg2')
+
 
 if __name__ == '__main__': # pragma: no cover
     unittest.main()
