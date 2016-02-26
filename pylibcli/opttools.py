@@ -102,8 +102,8 @@ class CommandHandler():
                 file=sys.stderr) 
 
     def parse_opt(self, name):
-        if name in self.opts:
-            return
+        #if name in self.opts: # Should not happen
+            #return
         self.opts[name] = {'alias': []}
         if name in self.hint:
             hint = self.hint[name]

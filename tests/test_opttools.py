@@ -63,7 +63,7 @@ class TestCommandHandler(unittest.TestCase):
     def test_commandhandler_construct_many_positional_args(self):
         with self.assertRaises(opttools.StructureError):
             def func(a, b):
-                self.mock(a, b)
+                pass # pragma no cover
             opttools.CommandHandler(func)(['test', 'a', 'b'])
 
     def test_commandhandler_construct_required_option(self):
@@ -72,16 +72,23 @@ class TestCommandHandler(unittest.TestCase):
         opttools.CommandHandler(func, a='_a:', b='_b:str')\
             (['test', '-a', 'vala', '-bvalb'])
 
+    def test_commandhandler_construct_required_option_with_default(self):
+        with self.assertRaises(opttools.StructureError):
+            def func(a, *, b):
+                pass # pragma no cover
+            opttools.CommandHandler(func, a='_a:=a', b='_b:str')\
+                (['test', '-a', 'vala', '-bvalb'])
+
     def test_commandhandler_construct_hint_duplicate(self):
         with self.assertRaises(opttools.StructureError):
             def func(*, a, b):
-                self.mock(a, b)
+                pass # pragma no cover
             opttools.CommandHandler(func, a='d', b='d')(['test', 'a', 'b'])
 
     def test_commandhandler_construct_hint_optional_without_default(self):
         with self.assertRaises(opttools.StructureError):
             def func(*, a, b):
-                self.mock(a, b)
+                pass # pragma no cover
             opttools.CommandHandler(func, a='::', b='::=')(['test', 'a', 'b'])
 
     def test_commandhandler_parse_integers(self):
@@ -151,14 +158,14 @@ class TestOptionHandler(unittest.TestCase):
             @self.opthdr.default
             @self.opthdr.default
             def func(*args):
-                self.mock(*args)
+                pass # pragma no cover
 
     def test_optionhandler_command_duplicated(self):
         with self.assertRaises(opttools.StructureError):
             @self.opthdr.command
             @self.opthdr.command
             def func(*args):
-                self.mock(*args)
+                pass # pragma no cover
 
     def test_optionhandler_except_default(self):
         with self.assertRaises(SystemExit) as cm:
@@ -223,6 +230,21 @@ class TestOptionHandler(unittest.TestCase):
             @self.opthdr.error()
             class NotAnException(BaseException):
                 pass
+
+
+class TestOptionHandlerDebug(TestOptionHandler):
+    def setUp(self):
+        super().setUp()
+        opttools.DEBUG = True
+        self.stderr = io.StringIO()
+        self._stderr = sys.stderr
+        sys.stderr = self.stderr
+
+    def tearDown(self):
+        super().tearDown()
+        opttools.DEBUG = False
+        sys.stderr = self._stderr
+
 
 
 if __name__ == '__main__': # pragma: no cover
