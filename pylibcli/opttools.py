@@ -134,6 +134,7 @@ class CommandHandler():
                 if len(htype) != 2:
                     raise StructureError('Option "{}" optional value requires '\
                         'a default value'.format(name))
+                print('htype:', repr(htype))
                 if htype[0]:
                     self.opts[name]['type'] = htype[0].split(',')
                 else:
@@ -255,6 +256,8 @@ class CommandHandler():
     def format_value(self, name, value):
         #if 'type' not in self.opts[name]: # Should not happen
             #return value
+        if value is None and 'default' in self.opts[name]:
+            value = self.opts[name]['default']
         for i in self.opts[name]['type']:
             try:
                 if i == 'int':

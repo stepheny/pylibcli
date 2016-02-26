@@ -30,9 +30,9 @@ class TestCommandHandler(unittest.TestCase):
     def test_commandhandler_construct_hint(self):
         def func(*args, aflag=None, bflag=None, cflag=None):
             self.mock(*args, aflag=aflag, bflag=bflag, cflag=cflag)
-        opttools.CommandHandler(func, aflag='_a', bflag='_b', cflag='_c')\
+        opttools.CommandHandler(func, aflag='_a', bflag='_b', cflag='_c::=-')\
             (['test', '-a', '-b', '-c'])
-        self.mock.assert_called_once_with(aflag='', bflag='', cflag='')
+        self.mock.assert_called_once_with(aflag='', bflag='', cflag='-')
 
     def test_commandhandler_construct_guess(self):
         def func(*, i=0, s='', b=False, l=[]):
@@ -43,7 +43,8 @@ class TestCommandHandler(unittest.TestCase):
     def test_commandhandler_construct_guess_parse(self):
         def func(*, i=0, s='', b=False, l=[]):
             self.mock(i=i, s=s, b=b, l=l)
-        opttools.CommandHandler(func)(['test', '--i', '16', '--s', 's', '--b', 'N', '--l', 'x,y,z'])
+        opttools.CommandHandler(func)\
+            (['test', '--i', '16', '--s', 's', '--b', 'N', '--l', 'x,y,z'])
         self.mock.assert_called_once_with(i=16, s='s', b=False, l=['x', 'y', 'z'])
 
     def test_commandhandler_construct_guess_parse_dict(self):
@@ -55,8 +56,11 @@ class TestCommandHandler(unittest.TestCase):
     def test_commandhandler_construct_mono_positional_args(self):
         def func(input):
             self.mock(input)
-        opttools.CommandHandler(func, input='i::=-')(['test', '--input=foobar'])
+        ch = opttools.CommandHandler(func, input='i::str=-')
+        ch(['test', '--input=foobar'])
         self.mock.assert_called_once_with('foobar')
+        with self.assertRaises(opttools.OptionError):
+            ch(['test'])
 
     def test_commandhandler_construct_many_positional_args(self):
         with self.assertRaises(opttools.StructureError):
@@ -64,5 +68,44 @@ class TestCommandHandler(unittest.TestCase):
                 self.mock(a, b)
             opttools.CommandHandler(func)(['test', 'a', 'b'])
 
+    def test_commandhandler_construct_required_option(self):
+        def func(a, *, b):
+            self.mock(a, b)
+        opttools.CommandHandler(func, a='_a:', b='_b:str')\
+            (['test', '-a', 'vala', '-bvalb'])
+
+    def test_commandhandler_construct_hint_duplicate(self):
+        with self.assertRaises(opttools.StructureError):
+            def func(*, a, b):
+                self.mock(a, b)
+            opttools.CommandHandler(func, a='d', b='d')(['test', 'a', 'b'])
+
+    def test_commandhandler_construct_hint_optional_without_default(self):
+        with self.assertRaises(opttools.StructureError):
+            def func(*, a, b):
+                self.mock(a, b)
+            opttools.CommandHandler(func, a='::', b='::=')(['test', 'a', 'b'])
+
 if __name__ == '__main__': # pragma: no cover
     unittest.main()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
