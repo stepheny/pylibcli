@@ -329,7 +329,7 @@ class OptionHandler():
         #self._command.append(CommandHandler(func))
         name = kwargs['_name'] if '_name' in kwargs else func.__name__
         if name in self._command:
-            if i._ref:
+            if self._command[name]._ref:
                 raise StructureError('Command "{}" already defined at [{}]'.format( \
                     name, self._command[name]._ref))
             else:

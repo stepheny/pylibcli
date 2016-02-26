@@ -118,6 +118,19 @@ class TestOptionHandler(unittest.TestCase):
             self.opthdr.run(['test', 'arg0', 'arg1', 'arg2'])
             self.mock.assert_called_once_with('arg0', 'arg1', 'arg2')
 
+    def test_optionhandler_default_duplicated(self):
+        with self.assertRaises(opttools.StructureError):
+            @self.opthdr.default
+            @self.opthdr.default
+            def func(*args):
+                self.mock(*args)
+
+    def test_optionhandler_command_duplicated(self):
+        with self.assertRaises(opttools.StructureError):
+            @self.opthdr.command
+            @self.opthdr.command
+            def func(*args):
+                self.mock(*args)
 
 if __name__ == '__main__': # pragma: no cover
     unittest.main()
