@@ -105,6 +105,18 @@ class TestCommandHandler(unittest.TestCase):
             (['test', '-h', '0X10', '-d', '012', '-o', '0O10', '-b', '0B10'])
         self.mock.assert_called_once_with(h=16, d=10, o=8, b=2)
 
+    def test_commandhandler_parse_invalid_option(self):
+        with self.assertRaises(opttools.OptionError):
+            def func(*, s):
+                pass # pragma no cover
+            opttools.CommandHandler(func, s=':str')(['test', '-t'])
+
+    def test_commandhandler_parse_missing_option(self):
+        with self.assertRaises(opttools.OptionError):
+            def func(*, s):
+                pass # pragma no cover
+            opttools.CommandHandler(func, s=':str')(['test'])
+
 
 class TestCommandHandlerDebug(TestCommandHandler):
     def setUp(self):
@@ -161,6 +173,22 @@ class TestOptionHandler(unittest.TestCase):
                 pass # pragma no cover
 
     def test_optionhandler_command_duplicated(self):
+        with self.assertRaises(opttools.StructureError):
+            @self.opthdr.command
+            @self.opthdr.command
+            def func(*args):
+                pass # pragma no cover
+
+    def test_optionhandler_default_duplicated_withoud_stack_frame(self):
+      with unittest.mock.patch('inspect.currentframe', lambda: None):
+        with self.assertRaises(opttools.StructureError):
+            @self.opthdr.default
+            @self.opthdr.default
+            def func(*args):
+                pass # pragma no cover
+
+    def test_optionhandler_command_duplicated_withoud_stack_frame(self):
+      with unittest.mock.patch('inspect.currentframe', lambda: None):
         with self.assertRaises(opttools.StructureError):
             @self.opthdr.command
             @self.opthdr.command
