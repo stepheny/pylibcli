@@ -325,7 +325,8 @@ class OptionHandler():
         cur = inspect.currentframe()
         if func is None:
             return functools.partial(self.command, **kwargs)
-        #self._command.append(CommandHandler(func))
+        if not callable(func):
+            raise StructureError('Command "{}" not callable'.format(repr(func)))
         name = kwargs['_name'] if '_name' in kwargs else func.__name__
         if name in self._command:
             if self._command[name]._ref:
@@ -333,8 +334,6 @@ class OptionHandler():
                     name, self._command[name]._ref))
             else:
                 raise StructureError('Command "{}" already defined'.format(name))
-        elif not callable(func):
-            raise StructureError('Command "{}" not callable'.format(name))
         else:
             if cur is None:
                 # Python stack frame support not available
@@ -356,6 +355,8 @@ class OptionHandler():
         cur = inspect.currentframe()
         if func is None:
             return functools.partial(self.default, **kwargs)
+        elif not callable(func):
+            raise StructureError('Command "{}" not callable'.format(repr(func)))
         elif self._default is None:
             if cur is None:
                 # Python stack frame support not available

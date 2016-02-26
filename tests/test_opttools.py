@@ -195,6 +195,14 @@ class TestOptionHandler(unittest.TestCase):
             def func(*args):
                 pass # pragma no cover
 
+    def test_optionhandler_with_invalid_defaut(self):
+        with self.assertRaises(opttools.StructureError):
+            self.opthdr.default(object())
+
+    def test_optionhandler_with_invalid_command(self):
+        with self.assertRaises(opttools.StructureError):
+            self.opthdr.command(object())
+
     def test_optionhandler_except_default(self):
         with self.assertRaises(SystemExit) as cm:
             @self.opthdr.default
