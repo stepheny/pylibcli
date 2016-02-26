@@ -134,7 +134,6 @@ class CommandHandler():
                 if len(htype) != 2:
                     raise StructureError('Option "{}" optional value requires '\
                         'a default value'.format(name))
-                print('htype:', repr(htype))
                 if htype[0]:
                     self.opts[name]['type'] = htype[0].split(',')
                 else:
@@ -387,7 +386,7 @@ class OptionHandler():
             return functools.partial(self.error, **kwargs)
         elif not issubclass(ext, Exception):
             raise StructureError('Error "{}" should be subclass of "Exception"'.\
-                format())
+                format(ext.__name__))
         else:
             self._error[ext] = kwargs
         return ext
@@ -407,12 +406,14 @@ class OptionHandler():
                     last, argv = self._command[argv[0]](argv, last=last)
                 else:
                     raise OptionError('Unknow command "{}"'.format(argv[0]))
-        except tuple(self._error) as ex:
-            if 'errno' in self._error[ex]:
-                errno = self._error[ex]['errno']
-            else:
-                errno = 127
-            logger.error(ex)
+        except tuple(self._error) as exc:
+            errno = 127
+            for i in self._error:
+                if isinstance(exc, i):
+                    if 'errno' in self._error[i]:
+                        errno = self._error[i]['errno']
+                    break
+            logger.error(exc)
             sys.exit(errno)
         except OptionError as ex:
             logger.error(ex)

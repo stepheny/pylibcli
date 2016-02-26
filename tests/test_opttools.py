@@ -84,6 +84,34 @@ class TestCommandHandler(unittest.TestCase):
                 self.mock(a, b)
             opttools.CommandHandler(func, a='::', b='::=')(['test', 'a', 'b'])
 
+    def test_commandhandler_parse_integers(self):
+        def func(*, h, d, o, b):
+            self.mock(h=h, d=d, o=o, b=b)
+        opttools.CommandHandler(func, h='h:hex', d='d:dec', o='o:oct', b='b:bin')\
+            (['test', '-h', '10', '-d', '10', '-o', '10', '-b', '10'])
+        self.mock.assert_called_once_with(h=16, d=10, o=8, b=2)
+
+    def test_commandhandler_parse_integers_smart(self):
+        def func(*, h, d, o, b):
+            self.mock(h=h, d=d, o=o, b=b)
+        opttools.CommandHandler(func, h='h:int', d='d:int', o='o:int', b='b:int')\
+            (['test', '-h', '0X10', '-d', '012', '-o', '0O10', '-b', '0B10'])
+        self.mock.assert_called_once_with(h=16, d=10, o=8, b=2)
+
+
+class TestCommandHandlerDebug(TestCommandHandler):
+    def setUp(self):
+        super().setUp()
+        opttools.DEBUG = True
+        self.stderr = io.StringIO()
+        self._stderr = sys.stderr
+        sys.stderr = self.stderr
+
+    def tearDown(self):
+        super().tearDown()
+        opttools.DEBUG = False
+        sys.stderr = self._stderr
+
 
 class TestOptionHandler(unittest.TestCase):
     def setUp(self):
@@ -131,6 +159,71 @@ class TestOptionHandler(unittest.TestCase):
             @self.opthdr.command
             def func(*args):
                 self.mock(*args)
+
+    def test_optionhandler_except_default(self):
+        with self.assertRaises(SystemExit) as cm:
+            @self.opthdr.default
+            def func(*args):
+                raise TestException
+            self.opthdr.run(['test'])
+        self.assertEqual(cm.exception.code, 127) # opttools default
+
+    def test_optionhandler_except_custom(self):
+        with self.assertRaises(SystemExit) as cm:
+            @self.opthdr.default
+            def func(*args):
+                raise TestException32
+            self.opthdr.run(['test'])
+        self.assertEqual(cm.exception.code, 32)
+
+    def test_optionhandler_except_unexpected(self):
+        with self.assertRaises(TestExceptionUnexpected):
+            @self.opthdr.default
+            def func(*args):
+                raise TestExceptionUnexpected
+            self.opthdr.run(['test'])
+
+    def test_optionhandler_unexpected_option(self):
+      with unittest.mock.patch('sys.stderr', new=io.StringIO()) as stderr:
+        with self.assertRaises(SystemExit) as cm:
+            @self.opthdr.default
+            def func():
+                pass
+            self.opthdr.run(['test', 'unexpected'])
+        self.assertEqual(cm.exception.code, 127) # opttools default
+        self.assertTrue(stderr.tell() > 0)
+
+    def test_optionhandler_class_chain(self):
+      with unittest.mock.patch('sys.stdout', new=io.StringIO()) as stdout:
+        @self.opthdr.default(n='_n:int')
+        class Counter():
+            def __init__(self, *, n=0):
+                self._value = 0
+            @self.opthdr.command(n='_n:int')
+            def add(self, *, n=1):
+                self._value += n
+                return self
+            @self.opthdr.command
+            def value(self):
+                print(self._value)
+                return self
+        self.opthdr.run(['test', 'add', '-n20', 'add', 'value'])
+        self.assertEqual(stdout.getvalue(), '21\n')
+
+    def test_optionhandler_without_default(self):
+      with unittest.mock.patch('sys.stdout', new=io.StringIO()) as stdout:
+        @self.opthdr.command
+        def func():
+            print('Hello world!')
+        self.opthdr.run(['test', 'func'])
+        self.assertEqual(stdout.getvalue(), 'Hello world!\n')
+
+    def test_optionhandler_with_invalid_exception(self):
+        with self.assertRaises(opttools.StructureError):
+            @self.opthdr.error()
+            class NotAnException(BaseException):
+                pass
+
 
 if __name__ == '__main__': # pragma: no cover
     unittest.main()
