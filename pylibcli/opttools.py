@@ -67,8 +67,16 @@ class CommandHandler():
                 reqnarg -= 1
         if reqnarg > len(args):
             raise OptionError('Not enough positional argument')
-        if fas.varargs is not None:
+        elif fas.varargs is not None:
             reqnarg = len(args)
+        else:
+            reqnarg = sum([x not in kwargs for x in fas.args])
+            for i in range(last is not None, reqnarg): # Skip first if chained
+                if fas.args[i] in kwargs:
+                    raise OptionError('Option "{}" got both keyword and '\
+                        'positional value'.format(fas.args[i]))
+                if fas.args[i] in self.opts:
+                    args[i] = self.format_value(fas.args[i], args[i])
 
         return self._func(*args[:reqnarg], **kwargs), args[reqnarg:]
 
@@ -93,7 +101,6 @@ class CommandHandler():
         for i in fas.kwonlyargs:
             if not i.startswith('_'):
                 self.longopts.extend(self.parse_opt(i))
-
 
         if DEBUG:
             print('  short option string: "{}"'.format(self.shortopts), file=sys.stderr)
@@ -182,7 +189,7 @@ class CommandHandler():
                 if req != getopt.no_argument:
                     print('    argument type prefered "{}"'.format('", "'.join( \
                         self.opts[name]['type'])), file=sys.stderr)
-                if self.opts[name]['help'] is not None:
+                if 'help' in self.opts[name] and self.opts[name]['help'] is not None:
                     print('    with docstring: "{}"'.format( \
                         self.opts[name]['help']), file=sys.stderr)
                 else:
@@ -249,6 +256,21 @@ class CommandHandler():
             req = getopt.required_argument
 
         self.opts[name]['alias'].append('--'+name)
+
+        if DEBUG:
+            NRO = (' no', '', ' optional')
+            print('  Option "{}" requires{} argument'.format(name,  \
+                NRO[req.value]), file=sys.stderr)
+            print('    available as "{}"'.format('", "'.join( \
+                self.opts[name]['alias'])), file=sys.stderr)
+            if req != getopt.no_argument:
+                print('    argument type prefered "{}"'.format('", "'.join( \
+                    self.opts[name]['type'])), file=sys.stderr)
+            if 'help' in self.opts[name] and self.opts[name]['help'] is not None:
+                print('    with docstring: "{}"'.format( \
+                    self.opts[name]['help']), file=sys.stderr)
+            else:
+                print('    docstring not available', file=sys.stderr)
         # Option.val should be int or char, but with python, str is also usable.
         return [getopt.Option(name, req, None, name)]
 

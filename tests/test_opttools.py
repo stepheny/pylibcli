@@ -1,6 +1,7 @@
 import io
 import os
 import sys
+import math
 import unittest
 import unittest.mock
 from pylibcli import default, command, error, run
@@ -267,6 +268,26 @@ class TestOptionHandler(unittest.TestCase):
             class NotAnException(BaseException):
                 pass
 
+    def test_optionhandler_docstring(self):
+      with unittest.mock.patch('sys.stdout', new=io.StringIO()) as stdout:
+        @self.opthdr.command
+        def sin(deg=0):
+            """
+            :param float deg: Print sine of deg degrees.
+            """
+            #print(repr(deg))
+            print('{:0.3f}'.format(math.sin(math.radians(deg))))
+            #print(self.stderr.getvalue(), file=self._stderr)
+        self.opthdr.run(['test', 'sin', '90'])
+        self.assertEqual(stdout.getvalue(), '1.000\n')
+
+    def test_optionhandler_with_invalid_exception(self):
+        with self.assertRaises(opttools.StructureError):
+            @self.opthdr.error()
+            class NotAnException(BaseException):
+                pass
+
+
 
 class TestOptionHandlerDebug(TestOptionHandler):
     def setUp(self):
@@ -280,6 +301,7 @@ class TestOptionHandlerDebug(TestOptionHandler):
         super().tearDown()
         opttools.DEBUG = False
         sys.stderr = self._stderr
+        #print(self.stderr.getvalue(), file=self._stderr)
 
 
 
