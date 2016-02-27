@@ -87,7 +87,7 @@ class CommandHandler():
         self.alias = {}
         # Build longopts from func signature
         fas = inspect.getfullargspec(self._func)
-        if len(fas.args) > 1:
+        if len(fas.args) > 2 or len(fas.args) == 2 and fas.args[0] != 'self':
             raise StructureError('Function "{}" has more than one positional '\
                 'argument defined. This may result in ambiguous options. Try '\
                 'varargs and keyword-only arguments instead.'.\
@@ -95,8 +95,11 @@ class CommandHandler():
         self.longopts = []
         self.shortopts = '' if self._ is None else self._
         # positional args
-        if len(fas.args) == 1:
-            self.longopts.extend(self.parse_opt(fas.args[0]))
+        #if len(fas.args) == 1:
+            #self.longopts.extend(self.parse_opt(fas.args[0]))
+        for i in fas.args:
+            if i != 'self':
+                self.longopts.extend(self.parse_opt(i))
         # keyword only args
         for i in fas.kwonlyargs:
             if not i.startswith('_'):

@@ -275,18 +275,9 @@ class TestOptionHandler(unittest.TestCase):
             """
             :param float deg: Print sine of deg degrees.
             """
-            #print(repr(deg))
             print('{:0.3f}'.format(math.sin(math.radians(deg))))
-            #print(self.stderr.getvalue(), file=self._stderr)
         self.opthdr.run(['test', 'sin', '90'])
         self.assertEqual(stdout.getvalue(), '1.000\n')
-
-    def test_optionhandler_with_invalid_exception(self):
-        with self.assertRaises(opttools.StructureError):
-            @self.opthdr.error()
-            class NotAnException(BaseException):
-                pass
-
 
 
 class TestOptionHandlerDebug(TestOptionHandler):
