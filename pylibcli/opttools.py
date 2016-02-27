@@ -71,12 +71,12 @@ class CommandHandler():
             reqnarg = len(args)
         else:
             reqnarg = sum([x not in kwargs for x in fas.args])
-            for i in range(last is not None, reqnarg): # Skip first if chained
-                if fas.args[i] in kwargs:
-                    raise OptionError('Option "{}" got both keyword and '\
-                        'positional value'.format(fas.args[i]))
-                if fas.args[i] in self.opts:
-                    args[i] = self.format_value(fas.args[i], args[i])
+        for i in range(last is not None, reqnarg): # Skip first if chained
+            if i < len(fas.args) and fas.args[i] in kwargs:
+                raise OptionError('Option "{}" got both keyword and '\
+                    'positional value'.format(fas.args[i]))
+            if i < len(fas.args) and  fas.args[i] in self.opts:
+                args[i] = self.format_value(fas.args[i], args[i])
 
         return self._func(*args[:reqnarg], **kwargs), args[reqnarg:]
 
@@ -397,7 +397,6 @@ class OptionHandler():
                 else:
                     print('\nDefault command:', file=sys.stderr)
             self._default = CommandHandler(func, **kwargs, _ref=ref)
-            return func
         else:
             if self._default._ref:
                 raise StructureError('Default already defined at [{}]'.format( \

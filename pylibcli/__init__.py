@@ -1,4 +1,4 @@
-__version__ = "0.2.dev17"
+__version__ = "0.2.dev18"
 
 from .opttools import OptionHandler
 
