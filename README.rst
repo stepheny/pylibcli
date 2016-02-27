@@ -10,8 +10,8 @@ Submodules
 
 opttools
 ~~~~~~~~
-Specify Command with decorators.
-Automatically generate option list from decorator hinting, docstring and optiong default value.
+Specify command with decorators.
+Automatically generate option list from decorator hinting, docstring and option default value.
 Parse a list of argumens and call corresponding method in a chainable style.
 
 
