@@ -286,6 +286,90 @@ class TestOptionHandler(unittest.TestCase):
         self.opthdr.run(['test', 'sin', '90'])
         self.assertEqual(stdout.getvalue(), '1.000\n')
 
+    def test_optionhandler_docstring_alt(self):
+      with unittest.mock.patch('sys.stdout', new=io.StringIO()) as stdout:
+        @self.opthdr.command
+        def sin(deg=0):
+            """
+            :param deg: Print sine of deg degrees.
+            :type deg: int or float.
+            """
+            print('{:0.3f}'.format(math.sin(math.radians(deg))))
+        self.opthdr.run(['test', 'sin', '90'])
+        self.assertEqual(stdout.getvalue(), '1.000\n')
+
+    def test_optionhandler_docstring_with_hint(self):
+      with unittest.mock.patch('sys.stdout', new=io.StringIO()) as stdout:
+        @self.opthdr.command(deg='_:int,float')
+        def sin(deg=0):
+            """
+            :param float deg: Print sine of deg degrees.
+            """
+            print('{:0.3f}'.format(math.sin(math.radians(deg))))
+        self.opthdr.run(['test', 'sin', '90'])
+        self.assertEqual(stdout.getvalue(), '1.000\n')
+
+    def test_optionhandler_docstring_duplicated(self):
+      with unittest.mock.patch('sys.stdout', new=io.StringIO()) as stdout:
+        with self.assertRaises(opttools.StructureError):
+            @self.opthdr.command
+            def sin(deg=0):
+                """
+                :param float deg: Print sine of deg degrees.
+                :param float deg: Print sine of deg degrees.
+                """
+                pass # pragma no cover
+            self.opthdr.run(['test', 'sin', '90'])
+
+    def test_optionhandler_docstring_alt_duplicated(self):
+      with unittest.mock.patch('sys.stdout', new=io.StringIO()) as stdout:
+        with self.assertRaises(opttools.StructureError):
+            @self.opthdr.command
+            def sin(deg=0):
+                """
+                :param float deg: Print sine of deg degrees.
+                :param deg: Print sine of deg degrees.
+                """
+                pass # pragma no cover
+            self.opthdr.run(['test', 'sin', '90'])
+
+    def test_optionhandler_docstring_alt_type_duplicated(self):
+      with unittest.mock.patch('sys.stdout', new=io.StringIO()) as stdout:
+        with self.assertRaises(opttools.StructureError):
+            @self.opthdr.command
+            def sin(deg=0):
+                """
+                :param float deg: Print sine of deg degrees.
+                :type deg: int or float.
+                """
+                pass # pragma no cover
+            self.opthdr.run(['test', 'sin', '90'])
+
+    def test_optionhandler_docstring_with_hint_duplicated(self):
+      with unittest.mock.patch('sys.stdout', new=io.StringIO()) as stdout:
+        with self.assertRaises(opttools.StructureError):
+            @self.opthdr.command(deg='_:int,float')
+            def sin(deg=0):
+                """
+                :param float deg: Print sine of deg degrees.
+                :param deg: Print sine of deg degrees.
+                """
+                pass # pragma no cover
+            self.opthdr.run(['test', 'sin', '90'])
+
+    def test_optionhandler_docstring_with_unknown_type(self):
+      with unittest.mock.patch('sys.stdout', new=io.StringIO()) as stdout:
+        with self.assertRaises(opttools.OptionError):
+            @self.opthdr.default
+            def func(*,a=None, b=None, c=None):
+                """
+                :type a: flag.
+                :type b: none.
+                :type c: flag or none or foobar.
+                """
+                pass # pragma no cover
+            self.opthdr.run(['test', '--a', '--b', '--c=foobar'], debug=True)
+
 
 class TestOptionHandlerDebug(TestOptionHandler):
     def setUp(self):
@@ -299,8 +383,6 @@ class TestOptionHandlerDebug(TestOptionHandler):
         super().tearDown()
         opttools.DEBUG = False
         sys.stderr = self._stderr
-        #print(self.stderr.getvalue(), file=self._stderr)
-
 
 
 if __name__ == '__main__': # pragma: no cover

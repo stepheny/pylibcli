@@ -215,10 +215,7 @@ class CommandHandler():
             if len(result) > 1 or (len(result) == 1 and 'help' in self.opts[name]):
                 raise StructureError('param "{}" help dumplicated defined'.format(name))
             elif len(result) == 1:
-                if 'help' in self.opts[name]:
-                    raise StructureError('param "{}" help dumplicated defined'.format(name))
-                else:
-                    self.opts[name]['help'] = result[0]
+                self.opts[name]['help'] = result[0]
 
             # Try parse function docstring ':type name: type0 or type1 or type2.
             regex = re.compile(r'^\s*:type\s+{}:\s*([\s\w]+)\.?\s*$'.format(name), re.M)
@@ -416,7 +413,7 @@ class OptionHandler():
             self._error[ext] = kwargs
         return ext
 
-    def run(self, argv=None, *, last=None, logger=None):
+    def run(self, argv=None, *, last=None, logger=None, debug=False):
         if argv is None:
             argv = sys.argv
         if logger is None:
@@ -440,6 +437,6 @@ class OptionHandler():
                     break
             logger.error(exc)
             sys.exit(errno)
-        except OptionError as ex:
+        except () if debug else OptionError as ex:
             logger.error(ex)
             sys.exit(127)
