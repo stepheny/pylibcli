@@ -64,7 +64,7 @@ class Storage():
             logger.error('Failed to write file: "{}"'.format(self.filename))
 
     @command(key='k:str', value='v:int,float,str')
-    def create(self, *, key, value):
+    def create(self, key, value):
         self.load()
         logger.debug('Creating key: {} with value: {}'.format(repr(key), repr(value)))
         if key in self.data:
@@ -76,7 +76,7 @@ class Storage():
         return self # chainable
 
     @command(key='k:str', value='v:int,float,str')
-    def read(self, *, key):
+    def read(self, key):
         self.load()
         logger.debug('Reading key: {}'.format(repr(key)))
         if key in self.data:
@@ -88,7 +88,7 @@ class Storage():
         return self # chainable
 
     @command(key='k:str', value='v:int,float,str')
-    def update(self, *, key, value):
+    def update(self, key, value):
         self.load()
         logger.debug('Updating key: {} with value: {}'.format(repr(key), repr(value)))
         if key in self.data:
@@ -100,7 +100,7 @@ class Storage():
         return self # chainable
 
     @command(key='k:str', value='v:int,float,str')
-    def delete(self, *, key):
+    def delete(self, key):
         self.load()
         logger.debug('Deleting key: {}'.format(repr(key)))
         if key in self.data:

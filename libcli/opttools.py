@@ -93,8 +93,8 @@ class CommandHandler():
                 #'argument defined. This may result in ambiguous options. Try '\
                 #'varargs and keyword-only arguments instead.'.\
                     #format(self._func.__name__))
-        if len(fas.args) > 1 or len(fas.args) == 1 and fas.args[0] != 'self' \
-            and fas.varargs is not None:
+        if fas.varargs is not None and \
+            len(fas.args) > 1 or len(fas.args) == 1 and fas.args[0] != 'self':
             raise StructureError('Function "{}" is using positional argument '\
                 'and variable arguments at the same time. This may result in '\
                 'ambiguous options. Try varargs and keyword-only arguments instead.'.\
@@ -442,7 +442,7 @@ class OptionHandler():
                     if 'errno' in self._error[i]:
                         errno = self._error[i]['errno']
                     break
-            logger.error(exc)
+            logger.error(repr(exc))
             sys.exit(errno)
         except () if debug else OptionError as ex:
             logger.error(ex)
