@@ -22,7 +22,7 @@ Hello world: examples/hello_world.py::
 
 Define default and command
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
-libcli.command or libcli.command(**kwargs) could be used as a decorator to
+libcli.command or libcli.command(\*\*kwargs) could be used as a decorator to
 define a command function.
 
 Keyword arguments not starting with '_' passed to libcli.command would be used
@@ -31,7 +31,7 @@ as a hint to the option of the decorated function with the same name.
 Keyword _name can be used to override the command name,
 otherwie the function name would be used.
 
-libcli.default or libcli.default(**kwargs) is quite similar to command.
+libcli.default or libcli.default(\*\*kwargs) is quite similar to command.
 
 default function could only be defined once.
 
@@ -40,9 +40,9 @@ If defined, default function is always call at the very beginning.
 
 Define error
 ~~~~~~~~~~~~
-libcli.command or libcli.command(**kwargs) could be used to decorate an exception.
+libcli.command or libcli.command(\*\*kwargs) could be used to decorate an exception.
 
-libcli.command(**kwargs) could be used to define an errno other than default 127.
+libcli.command(\*\*kwargs) could be used to define an errno other than default 127.
 
 libcli.run would catch all defined errors, and exit with errno as exit code.
 
@@ -53,7 +53,7 @@ Define option type
 by docstring: examples/simple_options.py::
 
     @default
-    def main(*args, aflag=None, bflag=None, cvalue=None):
+    def main(\*args, aflag=None, bflag=None, cvalue=None):
         """Parse the args.
 
         :param aflag: Set aflag
@@ -66,7 +66,7 @@ by docstring: examples/simple_options.py::
 by decorator hint: examples/simple_options_hinted.py::
 
     @default(aflag='_a', bflag='_b', cvalue='c:int,float')
-    def main(*args, aflag=None, bflag=None, cvalue):
+    def main(\*args, aflag=None, bflag=None, cvalue):
 
 otherwise guess from option default value.
 
