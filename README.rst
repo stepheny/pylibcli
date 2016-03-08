@@ -53,7 +53,7 @@ Define option type
 by docstring: examples/simple_options.py::
 
     @default
-    def main(\*args, aflag=None, bflag=None, cvalue=None):
+    def main(*args, aflag=None, bflag=None, cvalue=None):
         """Parse the args.
 
         :param aflag: Set aflag
@@ -66,7 +66,7 @@ by docstring: examples/simple_options.py::
 by decorator hint: examples/simple_options_hinted.py::
 
     @default(aflag='_a', bflag='_b', cvalue='c:int,float')
-    def main(\*args, aflag=None, bflag=None, cvalue):
+    def main(*args, aflag=None, bflag=None, cvalue):
 
 otherwise guess from option default value.
 
