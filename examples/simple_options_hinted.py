@@ -1,7 +1,7 @@
-from pylibcli import default, command, run
-import pylibcli.opttools
+from libcli import default, command, run
+import libcli.opttools
 
-#pylibcli.opttools.DEBUG = True
+#libcli.opttools.DEBUG = True
 
 @default(aflag='_a', bflag='_b', cvalue='c:int,float')
 def main(*args, aflag=None, bflag=None, cvalue):

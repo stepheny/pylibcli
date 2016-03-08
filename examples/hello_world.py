@@ -1,4 +1,4 @@
-from pylibcli import default, run
+from libcli import default, run
 
 @default
 def main():

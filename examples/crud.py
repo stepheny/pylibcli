@@ -1,12 +1,12 @@
 #! /usr/bin/env python3
 """
-create, read, update, delete with pylibcli
+create, read, update, delete with libcli
 """
 import json
 from pprint import pprint
 
-from pylibcli import default, command, error, run
-import pylibcli.opttools
+from libcli import default, command, error, run
+import libcli.opttools
 
 SOME_FILE = 'crud.log'
 data = None
@@ -34,7 +34,7 @@ class KeyNotExist(Exception):
     pass
 
 @command
-def create(key, *, value):
+def create(key, value):
     if key in data:
         raise KeyExisted()
     else:
@@ -49,7 +49,7 @@ def read(key):
         raise KeyNotExist()
 
 @command
-def update(key, *, value):
+def update(key, value):
     if key in data:
         data[key] = value
     else:

@@ -6,7 +6,7 @@ http://www.gnu.org/software/libc/manual/html_node/Example-of-Getopt.html
 
 import sys
 import os
-from pylibcli.getopt import iter_getopt
+from libcli.getopt import iter_getopt
 
 if __name__ == '__main__':
     aflag = 0

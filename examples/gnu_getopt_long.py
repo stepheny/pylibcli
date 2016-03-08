@@ -6,7 +6,7 @@ http://www.gnu.org/software/libc/manual/html_node/Getopt-Long-Option-Example.htm
 
 import sys
 import os
-from pylibcli.getopt import iter_getopt_long, Flags, Option, \
+from libcli.getopt import iter_getopt_long, Flags, Option, \
     no_argument, required_argument, optional_argument
 
 if __name__ == '__main__':

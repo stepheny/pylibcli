@@ -94,7 +94,7 @@ class CommandHandler():
                 #'varargs and keyword-only arguments instead.'.\
                     #format(self._func.__name__))
         if fas.varargs is not None and \
-            len(fas.args) > 1 or len(fas.args) == 1 and fas.args[0] != 'self':
+            (len(fas.args) > 1 or len(fas.args) == 1 and fas.args[0] != 'self'):
             raise StructureError('Function "{}" is using positional argument '\
                 'and variable arguments at the same time. This may result in '\
                 'ambiguous options. Try varargs and keyword-only arguments instead.'.\
