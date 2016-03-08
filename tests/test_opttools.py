@@ -61,11 +61,18 @@ class TestCommandHandler(unittest.TestCase):
         with self.assertRaises(opttools.OptionError):
             ch(['test'])
 
-    def test_commandhandler_construct_many_positional_args(self):
+    # DEPRECATED since 0.3
+    #def test_commandhandler_construct_many_positional_args(self):
+        #with self.assertRaises(opttools.StructureError):
+            #def func(a, b):
+                #pass # pragma no cover
+            #opttools.CommandHandler(func)(['test', 'a', 'b'])
+
+    def test_commandhandler_construct_mix_positional_and_variable_args(self):
         with self.assertRaises(opttools.StructureError):
-            def func(a, b):
+            def func(a, *b):
                 pass # pragma no cover
-            opttools.CommandHandler(func)(['test', 'a', 'b'])
+            opttools.CommandHandler(func)(['test'])
 
     def test_commandhandler_construct_required_option(self):
         def func(a, *, b):
