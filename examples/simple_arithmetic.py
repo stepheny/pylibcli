@@ -1,7 +1,7 @@
-from pylibcli import default, command, error, run
-import pylibcli.opttools
+from libcli import default, command, error, run
+import libcli.opttools
 
-#pylibcli.opttools.DEBUG = True
+#libcli.opttools.DEBUG = True
 
 
 class node():

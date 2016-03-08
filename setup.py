@@ -1,14 +1,14 @@
 from setuptools import setup
 import sys
 
-import pylibcli
+import libcli
 
 if sys.version_info.major < 3:
     raise Exception('Python 3 required')
 
 setup(
-    name='pylibcli',
-    version=pylibcli.__version__,
+    name='libcli',
+    version=libcli.__version__,
     description='Library helps to build command line interface',
     long_description=open('README.rst').read(),
 
@@ -17,7 +17,7 @@ setup(
     author='Stephen.Y',
     author_email='stephen.jin.yee@gmail.com',
 
-    packages=['pylibcli'],
+    packages=['libcli'],
     test_suite = 'tests',
 
     classifiers=[

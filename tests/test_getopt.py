@@ -4,17 +4,17 @@ import unittest.mock
 import io
 import sys
 
-from pylibcli import getopt
+from libcli import getopt
 
 class TestMissingGettext(unittest.TestCase):
     def setUp(self):
         self.mock = unittest.mock.Mock()
         if 'gettext' in sys.modules:
             del sys.modules['gettext']
-        if 'pylibcli' in sys.modules:
-            del sys.modules['pylibcli']
-        if 'pylibcli.getopt' in sys.modules:
-            del sys.modules['pylibcli.getopt']
+        if 'libcli' in sys.modules:
+            del sys.modules['libcli']
+        if 'libcli.getopt' in sys.modules:
+            del sys.modules['libcli.getopt']
         global __real_import__
         __real_import__ = builtins.__import__
         def trap_gettext(name, *args, **kwargs):
@@ -24,7 +24,7 @@ class TestMissingGettext(unittest.TestCase):
         builtins.__import__ = trap_gettext
 
     def test_gettext_missing(self):
-        from pylibcli import getopt
+        from libcli import getopt
         self.assertTrue('gettext' not in sys.modules)
         self.assertEqual("SomeString", getopt._("SomeString"))
 

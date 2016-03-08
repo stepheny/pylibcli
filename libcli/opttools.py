@@ -75,7 +75,7 @@ class CommandHandler():
             if i < len(fas.args) and fas.args[i] in kwargs:
                 raise OptionError('Option "{}" got both keyword and '\
                     'positional value'.format(fas.args[i]))
-            if i < len(fas.args) and  fas.args[i] in self.opts:
+            if i < len(args) and i < len(fas.args) and  fas.args[i] in self.opts:
                 args[i] = self.format_value(fas.args[i], args[i])
 
         return self._func(*args[:reqnarg], **kwargs), args[reqnarg:]

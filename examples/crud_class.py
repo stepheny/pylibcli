@@ -1,16 +1,16 @@
 #! /usr/bin/env python3
 """
-create, read, update, delete with pylibcli
+create, read, update, delete with libcli
 """
 import json
 import logging
 from pprint import pprint
 
-from pylibcli import default, command, error, run
-import pylibcli.opttools
+from libcli import default, command, error, run
+import libcli.opttools
 
 logger = logging.getLogger('crud')
-#pylibcli.opttools.DEBUG = True
+#libcli.opttools.DEBUG = True
 
 @error(errno=1)
 class KeyExisted(Exception):

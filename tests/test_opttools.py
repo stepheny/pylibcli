@@ -4,8 +4,8 @@ import sys
 import math
 import unittest
 import unittest.mock
-from pylibcli import default, command, error, run
-import pylibcli.opttools as opttools
+from libcli import default, command, error, run
+import libcli.opttools as opttools
 
 class TestException(Exception):
     pass
