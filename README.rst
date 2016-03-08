@@ -73,10 +73,10 @@ otherwise guess from option default value.
 
 Hint string: [_]shortopt[:[[[type1],type2],type3...] | ::[[[type1],type2],type3...]=default]
 
-- startswith a '_' the option would be used as short option only, otherwise the option name would be used as a long option;
+- startswith a '_' the option would be used as short option only, otherwise the option name would be used as a long option
 - shortopt should be a list of characters to be used as short option
 - without colons means this option requires no argument, if set function would be called with this option set a value not None.
-- a single colon means this option requires an argument.
+- a single colon means this option requires an argument
 - double colon measn the argument is optional, a default value is required
 - type list has priority
 
