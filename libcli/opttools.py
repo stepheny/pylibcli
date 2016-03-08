@@ -72,9 +72,9 @@ class CommandHandler():
         else:
             reqnarg = sum([x not in kwargs for x in fas.args])
         for i in range(last is not None, reqnarg): # Skip first if chained
-            if i < len(fas.args) and fas.args[i] in kwargs:
-                raise OptionError('Option "{}" got both keyword and '\
-                    'positional value'.format(fas.args[i]))
+            #if i < len(fas.args) and fas.args[i] in kwargs: # Should not happen
+                #raise OptionError('Option "{}" got both keyword and '\
+                    #'positional value'.format(fas.args[i]))
             if i < len(args) and i < len(fas.args) and  fas.args[i] in self.opts:
                 args[i] = self.format_value(fas.args[i], args[i])
 
@@ -87,10 +87,17 @@ class CommandHandler():
         self.alias = {}
         # Build longopts from func signature
         fas = inspect.getfullargspec(self._func)
-        if len(fas.args) > 2 or len(fas.args) == 2 and fas.args[0] != 'self':
-            raise StructureError('Function "{}" has more than one positional '\
-                'argument defined. This may result in ambiguous options. Try '\
-                'varargs and keyword-only arguments instead.'.\
+        # DEPRECATED since 0.3
+        #if len(fas.args) > 2 or len(fas.args) == 2 and fas.args[0] != 'self':
+            #raise StructureError('Function "{}" has more than one positional '\
+                #'argument defined. This may result in ambiguous options. Try '\
+                #'varargs and keyword-only arguments instead.'.\
+                    #format(self._func.__name__))
+        if len(fas.args) > 1 or len(fas.args) == 1 and fas.args[0] != 'self' \
+            and fas.varargs is not None:
+            raise StructureError('Function "{}" is using positional argument '\
+                'and variable arguments at the same time. This may result in '\
+                'ambiguous options. Try varargs and keyword-only arguments instead.'.\
                     format(self._func.__name__))
         self.longopts = []
         self.shortopts = '' if self._ is None else self._

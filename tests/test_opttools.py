@@ -118,12 +118,13 @@ class TestCommandHandler(unittest.TestCase):
                 pass # pragma no cover
             opttools.CommandHandler(func, s=':str')(['test'])
 
-    def test_commandhandler_parse_duplicated_option(self):
-        with self.assertRaises(opttools.OptionError):
-            def func(s, *args):
-                pass # pragma no cover
-            opttools.CommandHandler(func, s='s:str')\
-                (['test', '-s', 'once', 'twice'])
+    # DEPRECATED since 0.3
+    #def test_commandhandler_parse_duplicated_option(self):
+        #with self.assertRaises(opttools.OptionError):
+            #def func(s, *args):
+                #pass # pragma no cover
+            #opttools.CommandHandler(func, s='s:str')\
+                #(['test', '-s', 'once', 'twice'])
 
 
 class TestCommandHandlerDebug(TestCommandHandler):
