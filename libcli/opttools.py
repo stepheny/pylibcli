@@ -48,8 +48,8 @@ class CommandHandler():
 
         fas = inspect.getfullargspec(self._func)
         for i in fas.kwonlyargs:
-            if i not in kwargs and fas.kwonlydefaults is None \
-                or fas.kwonlydefaults is not None and i not in fas.kwonlydefaults:
+            if i not in kwargs and (fas.kwonlydefaults is None \
+                or fas.kwonlydefaults is not None and i not in fas.kwonlydefaults):
                 raise OptionError('Option "{}" should be provide with "{}"'.\
                     format(i, " or ".join(self.opts[i]['alias'])))
 
