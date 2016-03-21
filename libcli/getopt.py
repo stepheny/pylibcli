@@ -112,6 +112,7 @@ class GetoptIter():
         return self
 
     def __next__(self):
+        self.optarg = None
         if self.nextchar is None:
             if self.ordering == PERMUTE:
                 if self.first_nonopt != self.last_nonopt \
