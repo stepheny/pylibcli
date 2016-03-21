@@ -2,6 +2,12 @@ pylibcli
 ========
 A few libraries intend to help writing cli program more convenient.
 
+Installation
+------------
+Via pip::
+
+    $ pip install libcli
+
 
 Usage
 -----
@@ -82,10 +88,10 @@ Hint string: [_]shortopt[:[[[type1],type2],type3...] | ::[[[type1],type2],type3.
 
 Possible types (not case sensitive):
 
-- str  a command argument could always be parsed as a string
-- int, hex, dec, oct, bin  parse argument as an integer, int accepts 0x, 0o, 0b, 0(c-style octal literal), default decimal
-- float  parse as a floating point number
-- flag, none  accept no argument, if set value will be not None, currently ''
+- **str**  a command argument could always be parsed as a string
+- **int**, **hex**, **dec**, **oct**, **bin**  parse argument as an integer, int accepts 0x, 0o, 0b, 0(c-style octal literal), default decimal
+- **float**  parse as a floating point number
+- **flag**, **none**  accept no argument, if set value will be not None, currently ''
 
 following types may vary in future:
 
